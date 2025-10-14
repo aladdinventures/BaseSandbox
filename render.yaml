@@ -1,0 +1,31 @@
+# ===========================
+# Render Blueprint for MAMOS / Aladdin Sandbox
+# ===========================
+
+services:
+  - type: web
+    name: aladdin-backend
+    env: python
+    plan: free
+    buildCommand: |
+      cd backend/aiestimator-canada
+      pip install -r requirements.txt
+    startCommand: |
+      cd backend/aiestimator-canada
+      python app.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.4
+
+  - type: web
+    name: aladdin-frontend
+    env: node
+    plan: free
+    buildCommand: |
+      cd frontend
+      npm install
+    startCommand: |
+      cd frontend
+      npm start
+
+staticPublishPath: frontend
