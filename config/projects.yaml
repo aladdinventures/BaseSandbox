@@ -1,0 +1,39 @@
+projects:
+  - name: backend
+    path: apps/backend
+    framework_type: Flask
+    build_command: pip install -r requirements.txt
+    test_command: python -m unittest discover tests
+    start_command: python app.py
+    health_checks:
+      - endpoint: /health
+        method: GET
+        expected_status: 200
+
+  - name: frontend
+    path: apps/frontend
+    framework_type: Static HTML/CSS/JS
+    build_command: echo "No build step for static frontend"
+    test_command: echo "No automated tests for static frontend"
+    start_command: python -m http.server 8000
+    health_checks:
+      - endpoint: /
+        method: GET
+        expected_status: 200
+
+  - name: integrations
+    path: apps/integrations
+    framework_type: Python Script
+    build_command: pip install -r requirements.txt
+    test_command: echo "No automated tests for integrations"
+    start_command: echo "Integrations are run on demand"
+    health_checks: []
+
+  - name: gpt_agent
+    path: apps/gpt_agent
+    framework_type: Configuration
+    build_command: echo "No build step for GPT agent config"
+    test_command: echo "No automated tests for GPT agent config"
+    start_command: echo "GPT agent is managed externally"
+    health_checks: []
+
