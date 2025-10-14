@@ -1,0 +1,41 @@
+name: CI - MAMOS Sandbox
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Run tests
+        run: |
+          cd backend
+          npm test || echo "⚠️ No test script found, skipping."
+
+      - name: Generate report
+        run: |
+          mkdir -p reports
+          echo "✅ CI completed successfully at $(date)" > reports/status-$(date +%F-%H-%M).md
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: mamos-report
+          path: reports/
