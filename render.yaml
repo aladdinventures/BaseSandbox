@@ -27,5 +27,3 @@ services:
     startCommand: |
       cd frontend
       npm start
-
-staticPublishPath: frontend
