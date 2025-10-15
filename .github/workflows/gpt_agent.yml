@@ -1,0 +1,67 @@
+
+name: GPT Agent CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/gpt_agent/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/gpt_agent/**'
+
+jobs:
+  validate-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Validate configuration files
+        run: |
+          echo "Validating GPT Agent configuration..."
+          # Add any specific validation steps for JSON/YAML config files here
+          # For example, using a linter or schema validator if available
+
+      - name: Run MAMOS Test Automation for GPT Agent
+        run: python infra/ci-cd/mamos_runner.py --project gpt_agent
+
+  deploy-test:
+    needs: validate-config
+    runs-on: ubuntu-latest
+    environment:
+      name: Test
+      url: https://test.gpt-agent.aladdin.com
+    steps:
+      - name: Deploy to Test environment
+        run: echo "Deploying GPT Agent to Test environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.GPT_AGENT_TEST_DEPLOY_KEY }}"
+
+  deploy-staging:
+    needs: deploy-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Staging
+      url: https://staging.gpt-agent.aladdin.com
+    steps:
+      - name: Deploy to Staging environment
+        run: echo "Deploying GPT Agent to Staging environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.GPT_AGENT_TEST_DEPLOY_KEY }}"
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://production.gpt-agent.aladdin.com
+    steps:
+      - name: Deploy to Production environment
+        run: echo "Deploying GPT Agent to Production environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.GPT_AGENT_TEST_DEPLOY_KEY }}"
+

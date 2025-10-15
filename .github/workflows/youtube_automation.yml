@@ -1,0 +1,69 @@
+
+name: YouTube Automation CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/youtube_automation/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/youtube_automation/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install -r apps/youtube_automation/requirements.txt
+
+      - name: Run MAMOS Test Automation for YouTube Automation
+        run: python infra/ci-cd/mamos_runner.py --project youtube_automation
+
+  deploy-test:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Test
+      url: https://test.youtube-automation.aladdin.com
+    steps:
+      - name: Deploy to Test environment
+        run: echo "Deploying YouTube Automation to Test environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.YOUTUBE_AUTOMATION_TEST_DEPLOY_KEY }}"
+
+  deploy-staging:
+    needs: deploy-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Staging
+      url: https://staging.youtube-automation.aladdin.com
+    steps:
+      - name: Deploy to Staging environment
+        run: echo "Deploying YouTube Automation to Staging environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.YOUTUBE_AUTOMATION_TEST_DEPLOY_KEY }}"
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://production.youtube-automation.aladdin.com
+    steps:
+      - name: Deploy to Production environment
+        run: echo "Deploying YouTube Automation to Production environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.YOUTUBE_AUTOMATION_TEST_DEPLOY_KEY }}"
+

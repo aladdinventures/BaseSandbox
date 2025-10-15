@@ -1,0 +1,74 @@
+
+name: MAMOS Dashboard CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/mamos-dashboard/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/mamos-dashboard/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: apps/mamos-dashboard
+
+      - name: Build project
+        run: npm run build
+        working-directory: apps/mamos-dashboard
+
+      - name: Run MAMOS Test Automation for MAMOS Dashboard
+        run: python infra/ci-cd/mamos_runner.py --project mamos-dashboard
+
+  deploy-test:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Test
+      url: https://test.mamos-dashboard.aladdin.com
+    steps:
+      - name: Deploy to Test environment
+        run: echo "Deploying MAMOS Dashboard to Test environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.MAMOS_DASHBOARD_TEST_DEPLOY_KEY }}"
+
+  deploy-staging:
+    needs: deploy-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Staging
+      url: https://staging.mamos-dashboard.aladdin.com
+    steps:
+      - name: Deploy to Staging environment
+        run: echo "Deploying MAMOS Dashboard to Staging environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.MAMOS_DASHBOARD_TEST_DEPLOY_KEY }}"
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://production.mamos-dashboard.aladdin.com
+    steps:
+      - name: Deploy to Production environment
+        run: echo "Deploying MAMOS Dashboard to Production environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.MAMOS_DASHBOARD_TEST_DEPLOY_KEY }}"
+
