@@ -37,3 +37,43 @@ projects:
     start_command: echo "GPT agent is managed externally"
     health_checks: []
 
+
+
+  - name: youtube_automation
+    path: apps/youtube_automation
+    framework_type: Python Script
+    build_command: pip install -r requirements.txt
+    test_command: python -m unittest discover tests
+    start_command: python main.py
+    health_checks: []
+
+  - name: ai_newsbot
+    path: apps/ai_newsbot
+    framework_type: Python Script
+    build_command: pip install -r requirements.txt
+    test_command: python -m unittest discover tests
+    start_command: python src/main.py
+    health_checks: []
+
+  - name: mamos-dashboard
+    path: apps/mamos-dashboard
+    framework_type: Next.js
+    build_command: npm install && npm run build
+    test_command: npm test
+    start_command: npm start
+    health_checks:
+      - endpoint: /
+        method: GET
+        expected_status: 200
+
+  - name: mamos-orchestrator
+    path: apps/mamos-orchestrator
+    framework_type: NestJS
+    build_command: npm install && npm run build
+    test_command: npm test
+    start_command: npm run start:prod
+    health_checks:
+      - endpoint: /health
+        method: GET
+        expected_status: 200
+

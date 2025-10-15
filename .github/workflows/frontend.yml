@@ -1,0 +1,64 @@
+
+name: Frontend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/frontend/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/frontend/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build frontend
+        run: echo "No build step for static frontend"
+
+      - name: Run MAMOS Test Automation for Frontend
+        run: python infra/ci-cd/mamos_runner.py --project frontend
+
+  deploy-test:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Test
+      url: https://test.frontend.aladdin.com
+    steps:
+      - name: Deploy to Test environment
+        run: echo "Deploying frontend to Test environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.FRONTEND_TEST_DEPLOY_KEY }}"
+
+  deploy-staging:
+    needs: deploy-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Staging
+      url: https://staging.frontend.aladdin.com
+    steps:
+      - name: Deploy to Staging environment
+        run: echo "Deploying frontend to Staging environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.FRONTEND_TEST_DEPLOY_KEY }}"
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://production.frontend.aladdin.com
+    steps:
+      - name: Deploy to Production environment
+        run: echo "Deploying frontend to Production environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.FRONTEND_TEST_DEPLOY_KEY }}"
+

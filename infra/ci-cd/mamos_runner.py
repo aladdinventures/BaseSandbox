@@ -28,7 +28,7 @@ def generate_report(project_name, status, output, error, report_type='summary'):
             f.write(f'```\n{error}\n```\n\n')
     return report_path
 
-def main():
+def main(project_to_run=None):
     os.makedirs(DETAILS_DIR, exist_ok=True)
 
     config_path = os.path.join(os.getcwd(), 'config', 'projects.yaml')
@@ -42,7 +42,21 @@ def main():
     overall_status = True
     summary_report_content = []
 
-    for project in config['projects']:
+    projects_to_process = []
+    if project_to_run:
+        found = False
+        for p in config["projects"]:
+            if p["name"] == project_to_run:
+                projects_to_process.append(p)
+                found = True
+                break
+        if not found:
+            print(f"Error: Project [1m{project_to_run}[0m not found in projects.yaml")
+            return
+    else:
+        projects_to_process = config["projects"]
+
+    for project in projects_to_process:
         project_name = project['name']
         project_path = os.path.join(os.getcwd(), project['path'])
         print(f"\n--- Processing project: {project_name} ---")
@@ -153,6 +167,11 @@ def main():
     print(f"Summary report: {summary_path}")
     print(f"Detailed reports in: {DETAILS_DIR}")
 
+import argparse
+
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='MAMOS CI/CD Runner')
+    parser.add_argument('--project', type=str, help='Optional: Run CI/CD only for a specific project.')
+    args = parser.parse_args()
+    main(args.project)
 

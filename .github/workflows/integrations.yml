@@ -1,0 +1,69 @@
+
+name: Integrations CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/integrations/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/integrations/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install -r apps/integrations/requirements.txt
+
+      - name: Run MAMOS Test Automation for Integrations
+        run: python infra/ci-cd/mamos_runner.py --project integrations
+
+  deploy-test:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Test
+      url: https://test.integrations.aladdin.com
+    steps:
+      - name: Deploy to Test environment
+        run: echo "Deploying integrations to Test environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.INTEGRATIONS_TEST_DEPLOY_KEY }}"
+
+  deploy-staging:
+    needs: deploy-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Staging
+      url: https://staging.integrations.aladdin.com
+    steps:
+      - name: Deploy to Staging environment
+        run: echo "Deploying integrations to Staging environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.INTEGRATIONS_TEST_DEPLOY_KEY }}"
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://production.integrations.aladdin.com
+    steps:
+      - name: Deploy to Production environment
+        run: echo "Deploying integrations to Production environment..."
+        # Add actual deployment steps here, e.g., using environment secrets
+        # run: echo "Deploying with secret: ${{ secrets.INTEGRATIONS_TEST_DEPLOY_KEY }}"
+
