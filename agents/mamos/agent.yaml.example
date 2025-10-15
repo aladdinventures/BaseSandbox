@@ -1,0 +1,12 @@
+# MAMOS Agent Configuration
+# Copyright (c) 2025 Saeed Alaediny
+
+# Orchestrator server URL
+server_url: http://localhost:4000
+
+# Registration token (get this from the dashboard)
+token: your_registration_token_here
+
+# Heartbeat interval in seconds
+interval: 30
+

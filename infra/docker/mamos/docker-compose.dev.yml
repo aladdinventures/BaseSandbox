@@ -1,0 +1,88 @@
+# Copyright (c) 2025 Saeed Alaediny
+# MAMOS Development Docker Compose
+
+version: '3.8'
+
+services:
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mamos-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../../../infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - mamos-network
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mamos-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ../../../infra/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ../../../infra/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana-data:/var/lib/grafana
+    networks:
+      - mamos-network
+    depends_on:
+      - prometheus
+
+  # Orchestrator (NestJS)
+  orchestrator:
+    build:
+      context: ../../../apps/mamos-orchestrator
+      dockerfile: Dockerfile
+    container_name: mamos-orchestrator
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - DATABASE_URL=file:./dev.db
+      - JWT_SECRET=dev-secret-change-in-production
+      - ADMIN_EMAIL=admin@example.com
+      - ADMIN_PASSWORD=admin123
+    volumes:
+      - ../../../apps/mamos-orchestrator:/app
+      - /app/node_modules
+    networks:
+      - mamos-network
+    depends_on:
+      - prometheus
+
+  # Dashboard (Next.js/React)
+  dashboard:
+    build:
+      context: ../../../apps/mamos-dashboard
+      dockerfile: Dockerfile
+    container_name: mamos-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:4000
+    volumes:
+      - ../../../apps/mamos-dashboard:/app
+      - /app/node_modules
+    networks:
+      - mamos-network
+    depends_on:
+      - orchestrator
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  mamos-network:
+    driver: bridge
+
