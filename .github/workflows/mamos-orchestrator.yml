@@ -24,6 +24,7 @@ jobs:
       - name: Install pyyaml
         run: pip install pyyaml
       - name: Validate project name and secrets
+        working-directory: ${{ github.workspace }}
         run: python infra/ci-cd/validate_project.py mamos-orchestrator
 
   build-and-test:
@@ -47,6 +48,7 @@ jobs:
         working-directory: apps/mamos-orchestrator
 
       - name: Run MAMOS Test Automation for MAMOS Orchestrator
+        working-directory: ${{ github.workspace }}
         run: python infra/ci-cd/mamos_runner.py --project mamos-orchestrator
 
   deploy-test:
@@ -57,6 +59,7 @@ jobs:
       url: https://test.mamos-orchestrator.aladdin.com
     steps:
       - name: Deploy to Test environment
+        working-directory: ${{ github.workspace }}
         run: python infra/ci-cd/mamos_runner.py --project mamos-orchestrator --deploy-env Test
         env:
           RENDER_MAMOS_ORCHESTRATOR_TEST_API_KEY: ${{ secrets.RENDER_MAMOS_ORCHESTRATOR_TEST_API_KEY }}
@@ -83,6 +86,7 @@ jobs:
           echo "********************************************************************************"
 
       - name: Deploy to Staging environment
+        working-directory: ${{ github.workspace }}
         run: python infra/ci-cd/mamos_runner.py --project mamos-orchestrator --deploy-env Staging
         env:
           RENDER_MAMOS_ORCHESTRATOR_STAGING_API_KEY: ${{ secrets.RENDER_MAMOS_ORCHESTRATOR_STAGING_API_KEY }}
@@ -110,6 +114,7 @@ jobs:
           echo "********************************************************************************"
 
       - name: Deploy to Production environment
+        working-directory: ${{ github.workspace }}
         run: python infra/ci-cd/mamos_runner.py --project mamos-orchestrator --deploy-env Production
         env:
           RENDER_MAMOS_ORCHESTRATOR_PRODUCTION_API_KEY: ${{ secrets.RENDER_MAMOS_ORCHESTRATOR_PRODUCTION_API_KEY }}
