@@ -86,7 +86,7 @@ def main(project_to_run=None, deploy_env=None):
                 summary_report_content.append(f"- **{project_name}**: Tests FAILED")
                 generate_report(project_name, test_status, test_output, test_error, 'test')
                 continue
-
+        #Test#
         # Start Command (for health checks, not long-running)
         start_status, start_output, start_error = True, '', ''
         if project.get('start_command') and project.get('health_checks'):
