@@ -4,7 +4,9 @@ import os
 import datetime
 import requests
 import time
+Fix
 import argparse
+main
 
 REPORT_DIR = os.path.join(os.getcwd(), 'reports')
 DETAILS_DIR = os.path.join(REPORT_DIR, 'details')
@@ -91,11 +93,6 @@ def main(project_to_run=None, deploy_env=None):
         start_status, start_output, start_error = True, '', ''
         if project.get('start_command') and project.get('health_checks'):
             print(f"Attempting to start {project_name} for health checks...")
-            # For simplicity, we'll just run the start command and assume it's quick or backgrounded
-            # A more robust solution would involve running in background and then killing it
-            # For health checks, we need to run the start command in the background
-            # and then kill it after checks. For now, we'll simplify.
-            # A more robust solution would use `subprocess.Popen` and `process.terminate()`
             start_status = True # Assume start command succeeds for now
             start_output = "Start command assumed to succeed for health checks."
             start_error = ""
@@ -113,12 +110,6 @@ def main(project_to_run=None, deploy_env=None):
                 endpoint = check['endpoint']
                 method = check.get('method', 'GET')
                 expected_status = check.get('expected_status', 200)
-                # For local testing, we need to know the actual port. This is a placeholder.
-                # In a real CI/CD environment, the service would be accessible via a known URL/port.
-                # For now, we'll skip actual requests for simplicity.
-                # full_url = f"http://localhost:8000{endpoint}" # Assuming local server on port 8000 for frontend
-                # if project_name == 'backend': # Adjust for backend if it runs on a different port
-                #     full_url = f"http://localhost:5000{endpoint}" # Assuming Flask runs on 5000
                 health_check_status = True # Assume health checks pass for now
                 print(f"Skipping actual health check for {project_name}")
                 continue
@@ -168,7 +159,11 @@ def main(project_to_run=None, deploy_env=None):
                         }
                         
                         try:
+Fix
                             response = requests.post(deploy_url, headers=headers)
+
+                            response = requests.post(deploy_url, headers=headers )
+main
                             response.raise_for_status() # Raise an exception for HTTP errors
                             deploy_info = response.json()
                             deploy_id = deploy_info.get('id')
@@ -178,7 +173,11 @@ def main(project_to_run=None, deploy_env=None):
                             if deploy_id:
                                 print("Polling Render deployment status...")
                                 status_url = f"https://api.render.com/v1/services/{render_service_id}/deploys/{deploy_id}"
+Fix
                                 for _ in range(30): # Poll for up to 5 minutes (30 * 10 seconds)
+
+                                for _ in range(30 ): # Poll for up to 5 minutes (30 * 10 seconds)
+ main
                                     time.sleep(10)
                                     status_response = requests.get(status_url, headers=headers)
                                     status_response.raise_for_status()
@@ -235,6 +234,7 @@ def main(project_to_run=None, deploy_env=None):
     print(f"Summary report: {summary_path}")
     print(f"Detailed reports in: {DETAILS_DIR}")
 
+Fix
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='MAMOS CI/CD Runner')
     parser.add_argument('--project', type=str, help='Optional: Run CI/CD only for a specific project.')
@@ -242,3 +242,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     main(args.project, args.deploy_env)
 
+import argparse
+ main
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='MAMOS CI/CD Runner')
+    parser.add_argument('--project', type=str, help='Optional: Run CI/CD only for a specific project.')
+    parser.add_argument('--deploy-env', type=str, help='Optional: Deploy to a specific environment (Test, Staging, Production).')
+    args = parser.parse_args()
+    main(args.project, args.deploy_env)
