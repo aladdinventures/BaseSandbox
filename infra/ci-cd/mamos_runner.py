@@ -30,7 +30,11 @@ def generate_report(project_name, status, output, error, report_type='summary'):
             f.write(f'```\n{error}\n```\n\n')
     return report_path
 
+<<<<<<< HEAD
 def main(project_to_run=None, deploy_env=None):
+=======
+def main(project_to_run=None):
+>>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
     os.makedirs(DETAILS_DIR, exist_ok=True)
 
     config_path = os.path.join(os.getcwd(), 'config', 'projects.yaml')
@@ -236,6 +240,15 @@ def main(project_to_run=None, deploy_env=None):
     print(f"Detailed reports in: {DETAILS_DIR}")
 
 import argparse
+<<<<<<< HEAD
+=======
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='MAMOS CI/CD Runner')
+    parser.add_argument('--project', type=str, help='Optional: Run CI/CD only for a specific project.')
+    args = parser.parse_args()
+    main(args.project)
+>>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='MAMOS CI/CD Runner')
