@@ -42,6 +42,7 @@ jobs:
           pip install PyYAML requests
 
       - name: Run MAMOS Build, Test, and Health Check for Backend
+        working-directory: ${{ github.workspace }}
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} # Render API Key for deployments
         run: |
@@ -90,6 +91,7 @@ jobs:
           pip install PyYAML requests
 
       - name: Deploy Backend to Test environment
+        working-directory: ${{ github.workspace }}
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
@@ -152,6 +154,7 @@ jobs:
           pip install PyYAML requests
 
       - name: Deploy Backend to Staging environment
+        working-directory: ${{ github.workspace }}
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
@@ -215,6 +218,7 @@ jobs:
           pip install PyYAML requests
 
       - name: Deploy Backend to Production environment
+        working-directory: ${{ github.workspace }}
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
