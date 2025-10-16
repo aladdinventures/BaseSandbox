@@ -39,6 +39,7 @@ jobs:
           pip install PyYAML requests
 
       - name: Run MAMOS CI/CD
+        working-directory: ${{ github.workspace }}
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} # Render API Key for deployments
         run: |
