@@ -1,0 +1,54 @@
+{
+    "timestamp": 1760613673.3523445,
+    "overall_status": "unknown",
+    "projects": {
+        "backend": {
+            "build_log": "",
+            "test_log": "",
+            "deploy_log": "",
+            "duration": "unknown"
+        },
+        "frontend": {
+            "build_log": "",
+            "test_log": "",
+            "deploy_log": "",
+            "duration": "unknown"
+        },
+        "integrations": {
+            "build_log": "",
+            "test_log": "",
+            "deploy_log": "",
+            "duration": "unknown"
+        },
+        "gpt_agent": {
+            "build_log": "",
+            "test_log": "",
+            "deploy_log": "",
+            "duration": "unknown"
+        },
+        "youtube_automation": {
+            "build_log": "",
+            "test_log": "",
+            "deploy_log": "",
+            "duration": "unknown"
+        },
+        "ai_newsbot": {
+            "build_log": "",
+            "test_log": "",
+            "deploy_log": "",
+            "duration": "unknown"
+        },
+        "mamos-dashboard": {
+            "build_log": "",
+            "test_log": "",
+            "deploy_log": "",
+            "duration": "unknown"
+        },
+        "mamos-orchestrator": {
+            "build_log": "",
+            "test_log": "",
+            "deploy_log": "",
+            "duration": "unknown"
+        }
+    }
+}

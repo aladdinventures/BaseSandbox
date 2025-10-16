@@ -1,0 +1,157 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f7f6;
+    color: #333;
+    direction: rtl;
+    text-align: right;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 15px;
+}
+
+.status-card {
+    background-color: #e8f5e9;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    border-right: 5px solid #4caf50;
+}
+
+.status-card.failed {
+    background-color: #ffebee;
+    border-right: 5px solid #f44336;
+}
+
+.status-card.unknown {
+    background-color: #fff3e0;
+    border-right: 5px solid #ff9800;
+}
+
+.status-card h2 {
+    margin-top: 0;
+    color: #388e3c;
+    font-size: 1.5em;
+}
+
+.status-card.failed h2 {
+    color: #d32f2f;
+}
+
+.status-card.unknown h2 {
+    color: #f57c00;
+}
+
+#project-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.project-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease-in-out;
+}
+
+.project-card:hover {
+    transform: translateY(-5px);
+}
+
+.project-card h3 {
+    margin-top: 0;
+    color: #3f51b5;
+    font-size: 1.3em;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.project-card p {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+.project-card strong {
+    color: #555;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.status-badge.موفق {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.ناموفق {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge.در-حال-اجرا {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.نامشخص {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+.log-section {
+    background-color: #f8f8f8;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 15px;
+    max-height: 150px;
+    overflow-y: auto;
+    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.log-section h4 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1em;
+    margin-bottom: 5px;
+}
+
+.log-section pre {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    #project-list {
+        grid-template-columns: 1fr;
+    }
+}
+
