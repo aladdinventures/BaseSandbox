@@ -1,16 +1,9 @@
-# MAMOS Test Summary - 2025-10-16 06:23:56
+# MAMOS Test Summary - 2025-10-16 19:51:58
 
 ## Overall Status: FAILURE
 
 ### Project Statuses:
-- **backend**: SUCCESS
-- **frontend**: SUCCESS
-- **integrations**: SUCCESS
-- **gpt_agent**: SUCCESS
-- **youtube_automation**: SUCCESS
-- **ai_newsbot**: SUCCESS
-- **mamos-dashboard**: BUILD FAILED
-- **mamos-orchestrator**: BUILD FAILED
+- **youtube_automation**: TEST FAILED
 
 ### Detailed Reports:
 - [backend] Report](details/backend_report.md)

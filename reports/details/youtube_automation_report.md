@@ -33,3 +33,21 @@ tests/test_example.py .                                                  [100%]
 
 ---
 
+# youtube_automation - BUILD Report (2025-10-16 19:51:58)
+
+## Status: SUCCESS
+
+---
+
+# youtube_automation - TEST Report (2025-10-16 19:51:58)
+
+## Status: FAILURE
+
+### Error:
+```bash
+/bin/sh: 1: pytest: not found
+
+```
+
+---
+
