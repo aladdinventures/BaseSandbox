@@ -1,0 +1,110 @@
+
+name: GPT Agent CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/gpt_agent/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/gpt_agent/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Python and dependencies
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install pyyaml
+        run: pip install pyyaml
+      - name: Validate project name and secrets
+        run: python infra/ci-cd/validate_project.py gpt_agent
+
+  validate-config:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Validate configuration files
+        run: |
+          echo "Validating GPT Agent configuration..."
+          # Add any specific validation steps for JSON/YAML config files here
+          # For example, using a linter or schema validator if available
+
+      - name: Run MAMOS Test Automation for GPT Agent
+        run: python infra/ci-cd/mamos_runner.py --project gpt_agent
+
+  deploy-test:
+    needs: validate-config
+    runs-on: ubuntu-latest
+    environment:
+      name: Test
+      url: https://test.gpt-agent.aladdin.com
+    steps:
+      - name: Deploy to Test environment
+        run: python infra/ci-cd/mamos_runner.py --project gpt_agent --deploy-env Test
+        env:
+          RENDER_GPT_AGENT_TEST_API_KEY: ${{ secrets.RENDER_GPT_AGENT_TEST_API_KEY }}
+
+  deploy-staging:
+    needs: deploy-test
+    runs-on: ubuntu-latest
+    environment:
+      name: Staging
+      url: https://staging.gpt-agent.aladdin.com
+    steps:
+      - name: Manual Approval Required for Staging Deployment
+        run: |
+          echo "********************************************************************************"
+          echo "* MANUAL APPROVAL REQUIRED: Deployment to Staging Environment.                 *"
+          echo "*                                                                              *"
+          echo "* Please review the changes and approve this deployment in the GitHub Actions  *"
+          echo "* interface. This ensures all prerequisites are met before proceeding.         *"
+          echo "*                                                                              *"
+          echo "* Prerequisites:                                                               *"
+          echo "* - All automated tests have passed.                                           *"
+          echo "* - Code review for the merged changes is complete.                            *"
+          echo "* - Necessary Render Service IDs and API Keys are configured for Staging.      *"
+          echo "********************************************************************************"
+
+      - name: Deploy to Staging environment
+        run: python infra/ci-cd/mamos_runner.py --project gpt_agent --deploy-env Staging
+        env:
+          RENDER_GPT_AGENT_STAGING_API_KEY: ${{ secrets.RENDER_GPT_AGENT_STAGING_API_KEY }}
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://production.gpt-agent.aladdin.com
+    steps:
+      - name: Manual Approval Required for Production Deployment
+        run: |
+          echo "********************************************************************************"
+          echo "* MANUAL APPROVAL REQUIRED: Deployment to Production Environment.              *"
+          echo "*                                                                              *"
+          echo "* Please review the changes and approve this deployment in the GitHub Actions  *"
+          echo "* interface. This ensures all prerequisites are met before proceeding.         *"
+          echo "*                                                                              *"
+          echo "* Prerequisites:                                                               *"
+          echo "* - All automated tests have passed.                                           *"
+          echo "* - Code review for the merged changes is complete.                            *"
+          echo "* - Necessary Render Service IDs and API Keys are configured for Production.   *"
+          echo "* - Staging deployment has been successfully verified.                         *"
+          echo "********************************************************************************"
+
+      - name: Deploy to Production environment
+        run: python infra/ci-cd/mamos_runner.py --project gpt_agent --deploy-env Production
+        env:
+          RENDER_GPT_AGENT_PRODUCTION_API_KEY: ${{ secrets.RENDER_GPT_AGENT_PRODUCTION_API_KEY }}
+
