@@ -1,4 +1,3 @@
-
 import yaml
 import subprocess
 import os
@@ -30,11 +29,7 @@ def generate_report(project_name, status, output, error, report_type='summary'):
             f.write(f'```\n{error}\n```\n\n')
     return report_path
 
-<<<<<<< HEAD
 def main(project_to_run=None, deploy_env=None):
-=======
-def main(project_to_run=None):
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
     os.makedirs(DETAILS_DIR, exist_ok=True)
 
     config_path = os.path.join(os.getcwd(), 'config', 'projects.yaml')
@@ -57,7 +52,7 @@ def main(project_to_run=None):
                 found = True
                 break
         if not found:
-            print(f"Error: Project [1m{project_to_run}[0m not found in projects.yaml")
+            print(f"Error: Project \033[1m{project_to_run}\033[0m not found in projects.yaml")
             return
     else:
         projects_to_process = config["projects"]
@@ -95,11 +90,6 @@ def main(project_to_run=None):
         start_status, start_output, start_error = True, '', ''
         if project.get('start_command') and project.get('health_checks'):
             print(f"Attempting to start {project_name} for health checks...")
-            # For simplicity, we'll just run the start command and assume it's quick or backgrounded
-            # A more robust solution would involve running in background and then killing it
-            # For health checks, we need to run the start command in the background
-            # and then kill it after checks. For now, we'll simplify.
-            # A more robust solution would use `subprocess.Popen` and `process.terminate()`
             start_status = True # Assume start command succeeds for now
             start_output = "Start command assumed to succeed for health checks."
             start_error = ""
@@ -117,12 +107,6 @@ def main(project_to_run=None):
                 endpoint = check['endpoint']
                 method = check.get('method', 'GET')
                 expected_status = check.get('expected_status', 200)
-                # For local testing, we need to know the actual port. This is a placeholder.
-                # In a real CI/CD environment, the service would be accessible via a known URL/port.
-                # For now, we'll skip actual requests for simplicity.
-                # full_url = f"http://localhost:8000{endpoint}" # Assuming local server on port 8000 for frontend
-                # if project_name == 'backend': # Adjust for backend if it runs on a different port
-                #     full_url = f"http://localhost:5000{endpoint}" # Assuming Flask runs on 5000
                 health_check_status = True # Assume health checks pass for now
                 print(f"Skipping actual health check for {project_name}")
                 continue
@@ -151,18 +135,18 @@ def main(project_to_run=None):
                 continue
 
         if build_status and test_status:
-            if deploy_env and project.get(\'deploy_environments\'):
-                for env_config in project[\'deploy_environments\']:
-                    if env_config[\'name\'].lower() == deploy_env.lower():
+            if deploy_env and project.get('deploy_environments'):
+                for env_config in project['deploy_environments']:
+                    if env_config['name'].lower() == deploy_env.lower():
                         print(f"\n--- Deploying {project_name} to {deploy_env} environment on Render ---")
-                        render_service_id = env_config[\'render_service_id\']
-                        render_api_key = os.environ.get(env_config[\'render_api_key_secret_name\'])
+                        render_service_id = env_config['render_service_id']
+                        render_api_key = os.environ.get(env_config['render_api_key_secret_name'])
 
                         if not render_api_key:
-                            print(f"Error: Render API Key not found for {env_config[\'render_api_key_secret_name\]}")
+                            print(f"Error: Render API Key not found for {env_config['render_api_key_secret_name']}")
                             overall_status = False
                             summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED (Missing API Key)")
-                            generate_report(project_name, False, \'\', f\'Missing Render API Key for {deploy_env}\' , \'deploy\')
+                            generate_report(project_name, False, '', f'Missing Render API Key for {deploy_env}' , 'deploy')
                             break
 
                         deploy_url = f"https://api.render.com/v1/services/{render_service_id}/deploys"
@@ -172,50 +156,50 @@ def main(project_to_run=None):
                         }
                         
                         try:
-                            response = requests.post(deploy_url, headers=headers)
+                            response = requests.post(deploy_url, headers=headers )
                             response.raise_for_status() # Raise an exception for HTTP errors
                             deploy_info = response.json()
-                            deploy_id = deploy_info.get(\'id\')
+                            deploy_id = deploy_info.get('id')
                             print(f"Render deployment triggered for {project_name} (Deploy ID: {deploy_id})")
                             
                             # Optional: Poll for deployment status
                             if deploy_id:
                                 print("Polling Render deployment status...")
                                 status_url = f"https://api.render.com/v1/services/{render_service_id}/deploys/{deploy_id}"
-                                for _ in range(30): # Poll for up to 5 minutes (30 * 10 seconds)
+                                for _ in range(30 ): # Poll for up to 5 minutes (30 * 10 seconds)
                                     time.sleep(10)
                                     status_response = requests.get(status_url, headers=headers)
                                     status_response.raise_for_status()
-                                    current_status = status_response.json().get(\'status\')
+                                    current_status = status_response.json().get('status')
                                     print(f"Current deployment status: {current_status}")
-                                    if current_status in [\'live\', \'build_failed\', \'deactivated\', \'canceled\']:
+                                    if current_status in ['live', 'build_failed', 'deactivated', 'canceled']:
                                         break
                                 
-                                if current_status == \'live\':
+                                if current_status == 'live':
                                     print(f"Deployment of {project_name} to {deploy_env} on Render SUCCESSFUL.")
                                     summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} SUCCESS")
-                                    generate_report(project_name, True, f\'Render Deploy ID: {deploy_id}\' , \'\', \'deploy\')
+                                    generate_report(project_name, True, f'Render Deploy ID: {deploy_id}' , '', 'deploy')
                                 else:
                                     print(f"Deployment of {project_name} to {deploy_env} on Render FAILED with status: {current_status}")
                                     overall_status = False
                                     summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED")
-                                    generate_report(project_name, False, f\'Render Deploy ID: {deploy_id}\' , f\'Deployment status: {current_status}\' , \'deploy\')
+                                    generate_report(project_name, False, f'Render Deploy ID: {deploy_id}' , f'Deployment status: {current_status}' , 'deploy')
                             else:
                                 print(f"Render deployment for {project_name} failed to return a deploy ID.")
                                 overall_status = False
                                 summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED (No Deploy ID)")
-                                generate_report(project_name, False, \'\', \'No Deploy ID from Render\', \'deploy\')
+                                generate_report(project_name, False, '', 'No Deploy ID from Render', 'deploy')
 
                         except requests.exceptions.RequestException as e:
                             print(f"Error triggering Render deployment for {project_name}: {e}")
                             overall_status = False
                             summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED (Request Error)")
-                            generate_report(project_name, False, \'\', f\'Render API Request Error: {e}\' , \'deploy\')
+                            generate_report(project_name, False, '', f'Render API Request Error: {e}' , 'deploy')
                         except Exception as e:
                             print(f"An unexpected error occurred during Render deployment for {project_name}: {e}")
                             overall_status = False
                             summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED (Unexpected Error)")
-                            generate_report(project_name, False, \'\', f\'Unexpected Error: {e}\' , \'deploy\')
+                            generate_report(project_name, False, '', f'Unexpected Error: {e}' , 'deploy')
                         break # Only deploy to the specified environment
             summary_report_content.append(f"- **{project_name}**: SUCCESS")
             generate_report(project_name, True, build_output + test_output + start_output, build_error + test_error + start_error)
@@ -240,19 +224,10 @@ def main(project_to_run=None):
     print(f"Detailed reports in: {DETAILS_DIR}")
 
 import argparse
-<<<<<<< HEAD
-=======
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='MAMOS CI/CD Runner')
     parser.add_argument('--project', type=str, help='Optional: Run CI/CD only for a specific project.')
-    args = parser.parse_args()
-    main(args.project)
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='MAMOS CI/CD Runner')
-    parser.add_argument(\'--project\', type=str, help=\'Optional: Run CI/CD only for a specific project.\')
-    parser.add_argument(\'--deploy-env\', type=str, help=\'Optional: Deploy to a specific environment (Test, Staging, Production).\')
+    parser.add_argument('--deploy-env', type=str, help='Optional: Deploy to a specific environment (Test, Staging, Production).')
     args = parser.parse_args()
     main(args.project, args.deploy_env)

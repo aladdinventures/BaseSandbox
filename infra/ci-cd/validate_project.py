@@ -20,19 +20,28 @@ def main():
     with open(CONFIG_PATH, "r") as f:
         config = yaml.safe_load(f)
 
-    if project_name not in config:
-        print(f"❌ [ERROR] Project '{project_name}' not found in {CONFIG_PATH}")
+    # The config structure is now a dictionary with a 'projects' key
+    # We need to iterate through the list of projects to find the matching one
+    found_project = None
+    for project_entry in config.get('projects', []):
+        if project_entry.get('name') == project_name:
+            found_project = project_entry
+            break
+
+    if not found_project:
+        print(f"❌ [ERROR] Project \'{project_name}\' not found in {CONFIG_PATH}")
         print("📌 Please add the project with proper configuration.")
         sys.exit(1)
 
     # check secrets
-    for env in ["TEST", "STAGING", "PRODUCTION"]:
-        secret_name = f"RENDER_{project_name.upper().replace('-', '_')}_{env}_API_KEY"
-        if not os.getenv(secret_name):
+    # Assuming deploy_environments is a list of dictionaries within the found_project
+    for env_config in found_project.get('deploy_environments', []):
+        secret_name = env_config.get('render_api_key_secret_name')
+        if secret_name and not os.getenv(secret_name):
             print(f"⚠️  [WARNING] Secret {secret_name} is not set in environment.")
             print("   This may cause deployment failure at later stages.")
 
-    print(f"✅ [OK] Project '{project_name}' found in config.")
+    print(f"✅ [OK] Project \'{project_name}\' found in config.")
     sys.exit(0)
 
 if __name__ == "__main__":
