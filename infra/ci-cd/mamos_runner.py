@@ -4,6 +4,9 @@ import os
 import datetime
 import requests
 import time
+Fix
+import argparse
+main
 
 REPORT_DIR = os.path.join(os.getcwd(), 'reports')
 DETAILS_DIR = os.path.join(REPORT_DIR, 'details')
@@ -156,7 +159,11 @@ def main(project_to_run=None, deploy_env=None):
                         }
                         
                         try:
+Fix
+                            response = requests.post(deploy_url, headers=headers)
+
                             response = requests.post(deploy_url, headers=headers )
+main
                             response.raise_for_status() # Raise an exception for HTTP errors
                             deploy_info = response.json()
                             deploy_id = deploy_info.get('id')
@@ -166,7 +173,11 @@ def main(project_to_run=None, deploy_env=None):
                             if deploy_id:
                                 print("Polling Render deployment status...")
                                 status_url = f"https://api.render.com/v1/services/{render_service_id}/deploys/{deploy_id}"
+Fix
+                                for _ in range(30): # Poll for up to 5 minutes (30 * 10 seconds)
+
                                 for _ in range(30 ): # Poll for up to 5 minutes (30 * 10 seconds)
+ main
                                     time.sleep(10)
                                     status_response = requests.get(status_url, headers=headers)
                                     status_response.raise_for_status()
@@ -216,14 +227,23 @@ def main(project_to_run=None, deploy_env=None):
             f.write(f'{line}\n')
         f.write('\n### Detailed Reports:\n')
         for project in config['projects']:
-            f.write(f'- [{project["name"]} Report](details/{project["name"]}_report.md)\n')
+            f.write(f'- [{project["name"]}] Report](details/{project["name"]}_report.md)\n')
 
     print(f"\n--- MAMOS Run Complete ---")
     print(f"Overall Status: {'SUCCESS' if overall_status else 'FAILURE'}")
     print(f"Summary report: {summary_path}")
     print(f"Detailed reports in: {DETAILS_DIR}")
 
+Fix
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='MAMOS CI/CD Runner')
+    parser.add_argument('--project', type=str, help='Optional: Run CI/CD only for a specific project.')
+    parser.add_argument('--deploy-env', type=str, help='Optional: Deploy to a specific environment (Test, Staging, Production).')
+    args = parser.parse_args()
+    main(args.project, args.deploy_env)
+
 import argparse
+ main
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='MAMOS CI/CD Runner')
