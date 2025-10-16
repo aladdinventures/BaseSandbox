@@ -1,3 +1,4 @@
+
 name: YouTube Automation CI/CD
 
 on:
@@ -6,62 +7,122 @@ on:
       - main
     paths:
       - 'apps/youtube_automation/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'apps/youtube_automation/**'
+      - 'config/projects.yaml'
+      - 'infra/ci-cd/mamos_runner.py'
+  workflow_dispatch:
+    inputs:
+      deploy_environment:
+        description: 'Deployment environment (e.g., Test, Staging, Production)'
+        required: false
+        type: string
+
+env:
+  PYTHONUNBUFFERED: "1"
 
 jobs:
-  validate:
+  build-test:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install Python and dependencies
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Install pyyaml
-        run: pip install pyyaml
-      - name: Validate project name and secrets
-        run: python infra/ci-cd/validate_project.py youtube_automation
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
 
-  build-and-test:
-    needs: validate
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: pip install -r apps/youtube_automation/requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML requests
 
-      - name: Run MAMOS Test Automation for YouTube Automation
-        run: python infra/ci-cd/mamos_runner.py --project youtube_automation
+      - name: Run MAMOS Build and Test for YouTube Automation
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python infra/ci-cd/mamos_runner.py --project youtube_automation
+
+      - name: Upload CI/CD Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: mamos-ci-cd-reports-youtube_automation
+          path: reports/
+
+      - name: Commit and Push Reports (if successful)
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git commit -m "CI/CD: MAMOS reports for youtube_automation" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
 
   deploy-test:
-    needs: build-and-test
+    needs: build-test
     runs-on: ubuntu-latest
     environment:
       name: Test
-      url: https://test.youtube-automation.aladdin.com
+      url: https://test.youtube_automation.aladdin.com
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+
     steps:
-      - name: Deploy to Test environment
-        run: python infra/ci-cd/mamos_runner.py --project youtube_automation --deploy-env Test
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML requests
+
+      - name: Deploy YouTube Automation to Test environment
         env:
-          RENDER_YOUTUBE_AUTOMATION_TEST_API_KEY: ${{ secrets.RENDER_YOUTUBE_AUTOMATION_TEST_API_KEY }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python infra/ci-cd/mamos_runner.py --project youtube_automation --deploy-env Test
+
+      - name: Upload CI/CD Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: mamos-ci-cd-reports-youtube_automation-deploy-test
+          path: reports/
+
+      - name: Commit and Push Reports (if successful)
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git commit -m "CI/CD: MAMOS deployment reports for youtube_automation (Test)" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
 
   deploy-staging:
     needs: deploy-test
     runs-on: ubuntu-latest
     environment:
       name: Staging
-      url: https://staging.youtube-automation.aladdin.com
+      url: https://staging.youtube_automation.aladdin.com
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+
     steps:
       - name: Manual Approval Required for Staging Deployment
         run: |
@@ -77,17 +138,53 @@ jobs:
           echo "* - Necessary Render Service IDs and API Keys are configured for Staging.      *"
           echo "********************************************************************************"
 
-      - name: Deploy to Staging environment
-        run: python infra/ci-cd/mamos_runner.py --project youtube_automation --deploy-env Staging
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML requests
+
+      - name: Deploy YouTube Automation to Staging environment
         env:
-          RENDER_YOUTUBE_AUTOMATION_STAGING_API_KEY: ${{ secrets.RENDER_YOUTUBE_AUTOMATION_STAGING_API_KEY }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python infra/ci-cd/mamos_runner.py --project youtube_automation --deploy-env Staging
+
+      - name: Upload CI/CD Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: mamos-ci-cd-reports-youtube_automation-deploy-staging
+          path: reports/
+
+      - name: Commit and Push Reports (if successful)
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git commit -m "CI/CD: MAMOS deployment reports for youtube_automation (Staging)" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
 
   deploy-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
     environment:
       name: Production
-      url: https://production.youtube-automation.aladdin.com
+      url: https://production.youtube_automation.aladdin.com
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+
     steps:
       - name: Manual Approval Required for Production Deployment
         run: |
@@ -104,7 +201,39 @@ jobs:
           echo "* - Staging deployment has been successfully verified.                         *"
           echo "********************************************************************************"
 
-      - name: Deploy to Production environment
-        run: python infra/ci-cd/mamos_runner.py --project youtube_automation --deploy-env Production
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML requests
+
+      - name: Deploy YouTube Automation to Production environment
         env:
-          RENDER_YOUTUBE_AUTOMATION_PRODUCTION_API_KEY: ${{ secrets.RENDER_YOUTUBE_AUTOMATION_PRODUCTION_API_KEY }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python infra/ci-cd/mamos_runner.py --project youtube_automation --deploy-env Production
+
+      - name: Upload CI/CD Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: mamos-ci-cd-reports-youtube_automation-deploy-production
+          path: reports/
+
+      - name: Commit and Push Reports (if successful)
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git commit -m "CI/CD: MAMOS deployment reports for youtube_automation (Production)" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+

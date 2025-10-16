@@ -1,219 +1,232 @@
+
+import os
 import yaml
 import subprocess
-import os
-import datetime
-import requests
-import time
-Fix
 import argparse
-main
+import requests
+import datetime
+import time
+import signal
 
-REPORT_DIR = os.path.join(os.getcwd(), 'reports')
-DETAILS_DIR = os.path.join(REPORT_DIR, 'details')
+# Define constants
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.join(BASE_DIR, "..", "..")
+CONFIG_PATH = os.path.join(REPO_ROOT, "config", "projects.yaml")
+REPORT_DIR = os.path.join(REPO_ROOT, "reports")
+DETAILS_DIR = os.path.join(REPORT_DIR, "details")
 
-def run_command(command, cwd=None):
+# Ensure report directories exist
+os.makedirs(DETAILS_DIR, exist_ok=True)
+
+def load_config(config_path):
+    """Loads the project configuration from a YAML file."""
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
+
+def run_command(command, cwd, project_name, step_name):
+    """Runs a shell command and captures its output and status."""
+    print(f"\n--- Running {step_name} for {project_name} in {cwd} ---")
     try:
-        process = subprocess.run(command, shell=True, check=True, cwd=cwd, capture_output=True, text=True)
+        process = subprocess.run(
+            command,
+            cwd=cwd,
+            shell=True,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        print(f"{step_name} for {project_name} SUCCEEDED.")
         return True, process.stdout, process.stderr
     except subprocess.CalledProcessError as e:
+        print(f"{step_name} for {project_name} FAILED.")
+        print(f"Stdout: {e.stdout}")
+        print(f"Stderr: {e.stderr}")
         return False, e.stdout, e.stderr
-    except FileNotFoundError:
-        return False, '', f"Command not found: {command.split()[0]}"
+    except Exception as e:
+        print(f"An unexpected error occurred during {step_name} for {project_name}: {e}")
+        return False, "", str(e)
 
-def generate_report(project_name, status, output, error, report_type='summary'):
-    report_path = os.path.join(DETAILS_DIR, f'{project_name}_report.md')
-    with open(report_path, 'w', encoding='utf-8') as f:
-        f.write(f'# Project: {project_name}\n\n')
-        f.write(f'## Status: {"SUCCESS" if status else "FAILURE"}\n\n')
-        f.write('### Output\n')
-        f.write(f'```\n{output}\n```\n\n')
+def generate_report(project_name, status, output, error, step_type="ci"):
+    """Generates a detailed Markdown report for a project's CI/CD step."""
+    report_file = os.path.join(DETAILS_DIR, f"{project_name}_report.md")
+    with open(report_file, 'a', encoding='utf-8') as f:
+        f.write(f"# {project_name} - {step_type.upper()} Report ({datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')})\n\n")
+        f.write(f"## Status: {'SUCCESS' if status else 'FAILURE'}\n\n")
+        if output:
+            f.write("### Output:\n")
+            f.write(f"```bash\n{output}\n```\n\n")
         if error:
-            f.write('### Error\n')
-            f.write(f'```\n{error}\n```\n\n')
-    return report_path
+            f.write("### Error:\n")
+            f.write(f"```bash\n{error}\n```\n\n")
+        f.write("---\n\n")
 
-def main(project_to_run=None, deploy_env=None):
-    os.makedirs(DETAILS_DIR, exist_ok=True)
-
-    config_path = os.path.join(os.getcwd(), 'config', 'projects.yaml')
-    if not os.path.exists(config_path):
-        print(f"Error: projects.yaml not found at {config_path}")
-        return
-
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = yaml.safe_load(f)
-
+def main(target_project=None, deploy_env=None):
+    """Main function to run CI/CD pipeline for projects."""
+    config = load_config(CONFIG_PATH)
     overall_status = True
     summary_report_content = []
 
-    projects_to_process = []
-    if project_to_run:
-        found = False
-        for p in config["projects"]:
-            if p["name"] == project_to_run:
-                projects_to_process.append(p)
-                found = True
-                break
-        if not found:
-            print(f"Error: Project \033[1m{project_to_run}\033[0m not found in projects.yaml")
-            return
-    else:
-        projects_to_process = config["projects"]
-
-    for project in projects_to_process:
+    for project in config['projects']:
         project_name = project['name']
-        project_path = os.path.join(os.getcwd(), project['path'])
-        print(f"\n--- Processing project: {project_name} ---")
+        project_path = os.path.join(REPO_ROOT, project['path'])
 
-        # Build Command
-        build_status, build_output, build_error = True, '', ''
-        if project.get('build_command'):
-            print(f"Running build for {project_name}...")
-            build_status, build_output, build_error = run_command(project['build_command'], cwd=project_path)
-            print(f"Build {'SUCCESS' if build_status else 'FAILURE'}")
+        if target_project and project_name != target_project:
+            continue
+
+        print(f"\n=====================================================")
+        print(f"Starting CI/CD for project: {project_name}")
+        print(f"=====================================================")
+
+        build_status, build_output, build_error = True, "", ""
+        test_status, test_output, test_error = True, "", ""
+        start_status, start_output, start_error = True, "", ""
+        deploy_status = True
+
+        # 1. Build Step
+        if 'build' in project:
+            build_status, build_output, build_error = run_command(
+                project['build'], project_path, project_name, "Build"
+            )
+            generate_report(project_name, build_status, build_output, build_error, "build")
             if not build_status:
                 overall_status = False
-                summary_report_content.append(f"- **{project_name}**: Build FAILED")
-                generate_report(project_name, build_status, build_output, build_error, 'build')
+                summary_report_content.append(f"- **{project_name}**: BUILD FAILED")
                 continue
 
-        # Test Command
-        test_status, test_output, test_error = True, '', ''
-        if project.get('test_command'):
-            print(f"Running tests for {project_name}...")
-            test_status, test_output, test_error = run_command(project['test_command'], cwd=project_path)
-            print(f"Tests {'SUCCESS' if test_status else 'FAILURE'}")
+        # 2. Test Step
+        if 'test' in project:
+            test_status, test_output, test_error = run_command(
+                project['test'], project_path, project_name, "Test"
+            )
+            generate_report(project_name, test_status, test_output, test_error, "test")
             if not test_status:
                 overall_status = False
-                summary_report_content.append(f"- **{project_name}**: Tests FAILED")
-                generate_report(project_name, test_status, test_output, test_error, 'test')
+                summary_report_content.append(f"- **{project_name}**: TEST FAILED")
                 continue
 
-        # Start Command (for health checks, not long-running)
-        start_status, start_output, start_error = True, '', ''
-        if project.get('start_command') and project.get('health_checks'):
-            print(f"Attempting to start {project_name} for health checks...")
-            start_status = True # Assume start command succeeds for now
-            start_output = "Start command assumed to succeed for health checks."
-            start_error = ""
-            print(f"Start command {'SUCCESS' if start_status else 'FAILURE'}")
+        # 3. Start/Health Check Step (Optional, for local verification)
+        process = None
+        if 'start' in project and 'health_check' in project:
+            print(f"\n--- Starting {project_name} for health check ---")
+            try:
+                # Start the process in the background
+                process = subprocess.Popen(
+                    project['start'],
+                    cwd=project_path,
+                    shell=True,
+                    preexec_fn=os.setsid, # To allow killing process group
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                print(f"Waiting for {project_name} to start...")
+                
+                health_check_url = project['health_check']['url']
+                health_check_method = project['health_check'].get('method', 'GET')
+                health_check_timeout = project['health_check'].get('timeout', 5)
+                max_retries = 10 # Try for 10 * 5 = 50 seconds
+                
+                for i in range(max_retries):
+                    try:
+                        print(f"Attempt {i+1}/{max_retries}: Performing health check on {health_check_url} ({health_check_method})...")
+                        response = requests.request(health_check_method, health_check_url, timeout=health_check_timeout)
+                        response.raise_for_status()
+                        start_status = True
+                        start_output = f"Health check successful: {response.status_code} {response.text}"
+                        print(f"Health check for {project_name} SUCCEEDED.")
+                        break
+                    except requests.exceptions.RequestException as e:
+                        print(f"Health check failed: {e}. Retrying in 5 seconds...")
+                        time.sleep(5)
+                else:
+                    start_status = False
+                    start_error = f"Health check failed after {max_retries} retries."
+                    print(f"Health check for {project_name} FAILED after multiple retries.")
+
+            except Exception as e:
+                start_status = False
+                start_error = f"Error starting or checking {project_name}: {e}"
+                print(f"Error starting or checking {project_name}: {e}")
+            finally:
+                if process:
+                    print(f"Stopping {project_name}...")
+                    os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                    process.wait(timeout=5)
+                    stdout, stderr = process.communicate()
+                    start_output += f"\nProcess Stdout:\n{stdout}"
+                    start_error += f"\nProcess Stderr:\n{stderr}"
+            generate_report(project_name, start_status, start_output, start_error, "start_check")
             if not start_status:
                 overall_status = False
-                summary_report_content.append(f"- **{project_name}**: Start command FAILED for health checks")
-                generate_report(project_name, start_status, start_output, start_error, 'start')
+                summary_report_content.append(f"- **{project_name}**: HEALTH CHECK FAILED")
                 continue
 
-            # Health Checks (requires 'requests' library)
-            import requests
-            health_check_status = True
-            for check in project.get('health_checks', []):
-                endpoint = check['endpoint']
-                method = check.get('method', 'GET')
-                expected_status = check.get('expected_status', 200)
-                health_check_status = True # Assume health checks pass for now
-                print(f"Skipping actual health check for {project_name}")
-                continue
+        # 4. Deployment Step (Render.com integration)
+        if 'deploy' in project and deploy_env:
+            for deploy_config in project['deploy']:
+                if deploy_config['environment'] == deploy_env:
+                    print(f"\n--- Deploying {project_name} to {deploy_env} on Render --- ")
+                    try:
+                        service_id = deploy_config['render_service_id']
+                        api_key = os.environ.get('RENDER_API_KEY')
+                        if not api_key:
+                            raise ValueError("RENDER_API_KEY environment variable not set.")
 
-                print(f"Running health check for {project_name} at {full_url}...")
-                try:
-                    response = requests.request(method, full_url, timeout=5)
-                    if response.status_code != expected_status:
-                        health_check_status = False
-                        print(f"Health check FAILED for {project_name}: Expected {expected_status}, got {response.status_code}")
-                        break
-                    print(f"Health check PASSED for {project_name}")
-                except requests.exceptions.ConnectionError:
-                    health_check_status = False
-                    print(f"Health check FAILED for {project_name}: Connection refused. Is the app running?")
-                    break
-                except Exception as e:
-                    health_check_status = False
-                    print(f"Health check FAILED for {project_name}: {e}")
-                    break
-            
-            if not health_check_status:
-                overall_status = False
-                summary_report_content.append(f"- **{project_name}**: Health checks FAILED")
-                generate_report(project_name, health_check_status, '', 'Health check failed', 'health_check')
-                continue
-
-        if build_status and test_status:
-            if deploy_env and project.get('deploy_environments'):
-                for env_config in project['deploy_environments']:
-                    if env_config['name'].lower() == deploy_env.lower():
-                        print(f"\n--- Deploying {project_name} to {deploy_env} environment on Render ---")
-                        render_service_id = env_config['render_service_id']
-                        render_api_key = os.environ.get(env_config['render_api_key_secret_name'])
-
-                        if not render_api_key:
-                            print(f"Error: Render API Key not found for {env_config['render_api_key_secret_name']}")
-                            overall_status = False
-                            summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED (Missing API Key)")
-                            generate_report(project_name, False, '', f'Missing Render API Key for {deploy_env}' , 'deploy')
-                            break
-
-                        deploy_url = f"https://api.render.com/v1/services/{render_service_id}/deploys"
                         headers = {
-                            "Authorization": f"Bearer {render_api_key}",
-                            "Content-Type": "application/json"
+                            'Accept': 'application/json',
+                            'Authorization': f'Bearer {api_key}'
                         }
+                        deploy_url = f"https://api.render.com/v1/services/{service_id}/deploys"
                         
-                        try:
-Fix
-                            response = requests.post(deploy_url, headers=headers)
+                        # Trigger deployment
+                        response = requests.post(deploy_url, headers=headers)
+                        response.raise_for_status()
+                        deploy_data = response.json()
+                        deploy_id = deploy_data.get('id')
 
-                            response = requests.post(deploy_url, headers=headers )
-main
-                            response.raise_for_status() # Raise an exception for HTTP errors
-                            deploy_info = response.json()
-                            deploy_id = deploy_info.get('id')
-                            print(f"Render deployment triggered for {project_name} (Deploy ID: {deploy_id})")
+                        if deploy_id:
+                            print(f"Deployment triggered for {project_name}. Deploy ID: {deploy_id}")
+                            status_url = f"https://api.render.com/v1/services/{service_id}/deploys/{deploy_id}"
                             
-                            # Optional: Poll for deployment status
-                            if deploy_id:
-                                print("Polling Render deployment status...")
-                                status_url = f"https://api.render.com/v1/services/{render_service_id}/deploys/{deploy_id}"
-Fix
-                                for _ in range(30): # Poll for up to 5 minutes (30 * 10 seconds)
-
-                                for _ in range(30 ): # Poll for up to 5 minutes (30 * 10 seconds)
- main
-                                    time.sleep(10)
-                                    status_response = requests.get(status_url, headers=headers)
-                                    status_response.raise_for_status()
-                                    current_status = status_response.json().get('status')
-                                    print(f"Current deployment status: {current_status}")
-                                    if current_status in ['live', 'build_failed', 'deactivated', 'canceled']:
-                                        break
-                                
-                                if current_status == 'live':
-                                    print(f"Deployment of {project_name} to {deploy_env} on Render SUCCESSFUL.")
-                                    summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} SUCCESS")
-                                    generate_report(project_name, True, f'Render Deploy ID: {deploy_id}' , '', 'deploy')
-                                else:
-                                    print(f"Deployment of {project_name} to {deploy_env} on Render FAILED with status: {current_status}")
-                                    overall_status = False
-                                    summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED")
-                                    generate_report(project_name, False, f'Render Deploy ID: {deploy_id}' , f'Deployment status: {current_status}' , 'deploy')
+                            # Poll for deployment status
+                            current_status = ""
+                            for _ in range(30): # Poll for up to 5 minutes (30 * 10 seconds)
+                                time.sleep(10)
+                                status_response = requests.get(status_url, headers=headers)
+                                status_response.raise_for_status()
+                                current_status = status_response.json().get('status')
+                                print(f"Current deployment status: {current_status}")
+                                if current_status in ['live', 'build_failed', 'deactivated', 'canceled']:
+                                    break
+                            
+                            if current_status == 'live':
+                                print(f"Deployment of {project_name} to {deploy_env} on Render SUCCESSFUL.")
+                                summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} SUCCESS")
+                                generate_report(project_name, True, f'Render Deploy ID: {deploy_id}', '', 'deploy')
                             else:
-                                print(f"Render deployment for {project_name} failed to return a deploy ID.")
+                                print(f"Deployment of {project_name} to {deploy_env} on Render FAILED with status: {current_status}")
                                 overall_status = False
-                                summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED (No Deploy ID)")
-                                generate_report(project_name, False, '', 'No Deploy ID from Render', 'deploy')
+                                summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED")
+                                generate_report(project_name, False, f'Render Deploy ID: {deploy_id}', f'Deployment status: {current_status}', 'deploy')
+                        else:
+                            print(f"Render deployment for {project_name} failed to return a deploy ID.")
+                            overall_status = False
+                            summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED (No Deploy ID)")
+                            generate_report(project_name, False, '', 'No Deploy ID from Render', 'deploy')
+                    except requests.exceptions.RequestException as e:
+                        print(f"Error triggering Render deployment for {project_name}: {e}")
+                        overall_status = False
+                        summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED (Request Error)")
+                        generate_report(project_name, False, '', f'Render API Request Error: {e}', 'deploy')
+                    except Exception as e:
+                        print(f"An unexpected error occurred during Render deployment for {project_name}: {e}")
+                        overall_status = False
+                        summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED (Unexpected Error)")
+                        generate_report(project_name, False, '', f'Unexpected Error: {e}', 'deploy')
+                    break # Only deploy to the specified environment
 
-                        except requests.exceptions.RequestException as e:
-                            print(f"Error triggering Render deployment for {project_name}: {e}")
-                            overall_status = False
-                            summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED (Request Error)")
-                            generate_report(project_name, False, '', f'Render API Request Error: {e}' , 'deploy')
-                        except Exception as e:
-                            print(f"An unexpected error occurred during Render deployment for {project_name}: {e}")
-                            overall_status = False
-                            summary_report_content.append(f"- **{project_name}**: Deployment to {deploy_env} FAILED (Unexpected Error)")
-                            generate_report(project_name, False, '', f'Unexpected Error: {e}' , 'deploy')
-                        break # Only deploy to the specified environment
+        if build_status and test_status and start_status and deploy_status:
             summary_report_content.append(f"- **{project_name}**: SUCCESS")
-            generate_report(project_name, True, build_output + test_output + start_output, build_error + test_error + start_error)
         else:
             overall_status = False
 
@@ -234,7 +247,6 @@ Fix
     print(f"Summary report: {summary_path}")
     print(f"Detailed reports in: {DETAILS_DIR}")
 
-Fix
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='MAMOS CI/CD Runner')
     parser.add_argument('--project', type=str, help='Optional: Run CI/CD only for a specific project.')
@@ -242,12 +254,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
     main(args.project, args.deploy_env)
 
-import argparse
- main
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='MAMOS CI/CD Runner')
-    parser.add_argument('--project', type=str, help='Optional: Run CI/CD only for a specific project.')
-    parser.add_argument('--deploy-env', type=str, help='Optional: Deploy to a specific environment (Test, Staging, Production).')
-    args = parser.parse_args()
-    main(args.project, args.deploy_env)

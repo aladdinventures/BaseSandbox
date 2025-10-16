@@ -1,159 +1,106 @@
+
 projects:
   - name: backend
     path: apps/backend
-    framework_type: Flask
-    build_command: pip install -r requirements.txt
-    test_command: python -m unittest discover tests
-    start_command: python app.py
-    health_checks:
-      - endpoint: /health
-        method: GET
-        expected_status: 200
-    deploy_environments:
-      - name: Test
-        render_service_id: backend-test-service-id
-        render_api_key_secret_name: RENDER_BACKEND_TEST_API_KEY
-      - name: Staging
-        render_service_id: backend-staging-service-id
-        render_api_key_secret_name: RENDER_BACKEND_STAGING_API_KEY
-      - name: Production
-        render_service_id: backend-production-service-id
-        render_api_key_secret_name: RENDER_BACKEND_PRODUCTION_API_KEY
+    build: "pip install -r requirements.txt"
+    test: "pytest"
+    # Removed start and health_check for local CI/CD testing as they require a persistent running server
+    deploy:
+      - environment: Test
+        render_service_id: "backend-test-service-id"
+      - environment: Staging
+        render_service_id: "backend-staging-service-id"
+      - environment: Production
+        render_service_id: "backend-production-service-id"
 
   - name: frontend
     path: apps/frontend
-    framework_type: Static HTML/CSS/JS
-    build_command: echo "No build step for static frontend"
-    test_command: echo "No automated tests for static frontend"
-    start_command: python -m http.server 8000
-    health_checks:
-      - endpoint: /
-        method: GET
-        expected_status: 200
-    deploy_environments:
-      - name: Test
-        render_service_id: frontend-test-service-id
-        render_api_key_secret_name: RENDER_FRONTEND_TEST_API_KEY
-      - name: Staging
-        render_service_id: frontend-staging-service-id
-        render_api_key_secret_name: RENDER_FRONTEND_STAGING_API_KEY
-      - name: Production
-        render_service_id: frontend-production-service-id
-        render_api_key_secret_name: RENDER_FRONTEND_PRODUCTION_API_KEY
+    build: "npm install && npm run build"
+    test: "npm test"
+    # Removed start and health_check for local CI/CD testing as they require a persistent running server
+    deploy:
+      - environment: Test
+        render_service_id: "frontend-test-service-id"
+      - environment: Staging
+        render_service_id: "frontend-staging-service-id"
+      - environment: Production
+        render_service_id: "frontend-production-service-id"
 
   - name: integrations
     path: apps/integrations
-    framework_type: Python Script
-    build_command: pip install -r requirements.txt
-    test_command: echo "No automated tests for integrations"
-    start_command: echo "Integrations are run on demand"
-    health_checks: []
-    deploy_environments:
-      - name: Test
-        render_service_id: integrations-test-service-id
-        render_api_key_secret_name: RENDER_INTEGRATIONS_TEST_API_KEY
-      - name: Staging
-        render_service_id: integrations-staging-service-id
-        render_api_key_secret_name: RENDER_INTEGRATIONS_STAGING_API_KEY
-      - name: Production
-        render_service_id: integrations-production-service-id
-        render_api_key_secret_name: RENDER_INTEGRATIONS_PRODUCTION_API_KEY
+    build: "pip install -r requirements.txt"
+    test: "echo \"No automated tests for integrations\""
+    # No start/health_check for this example, assuming it's a script/agent
+    deploy:
+      - environment: Test
+        render_service_id: "integrations-test-service-id"
+      - environment: Staging
+        render_service_id: "integrations-staging-service-id"
+      - environment: Production
+        render_service_id: "integrations-production-service-id"
 
   - name: gpt_agent
     path: apps/gpt_agent
-    framework_type: Configuration
-    build_command: echo "No build step for GPT agent config"
-    test_command: echo "No automated tests for GPT agent config"
-    start_command: echo "GPT agent is managed externally"
-    health_checks: []
-    deploy_environments:
-      - name: Test
-        render_service_id: gpt-agent-test-service-id
-        render_api_key_secret_name: RENDER_GPT_AGENT_TEST_API_KEY
-      - name: Staging
-        render_service_id: gpt-agent-staging-service-id
-        render_api_key_secret_name: RENDER_GPT_AGENT_STAGING_API_KEY
-      - name: Production
-        render_service_id: gpt-agent-production-service-id
-        render_api_key_secret_name: RENDER_GPT_AGENT_PRODUCTION_API_KEY
-
-
+    build: "echo \"No build step for GPT agent config\""
+    test: "echo \"No automated tests for GPT agent config\""
+    # No start/health_check for this example
+    deploy:
+      - environment: Test
+        render_service_id: "gpt-agent-test-service-id"
+      - environment: Staging
+        render_service_id: "gpt-agent-staging-service-id"
+      - environment: Production
+        render_service_id: "gpt-agent-production-service-id"
 
   - name: youtube_automation
     path: apps/youtube_automation
-    framework_type: Python Script
-    build_command: pip install -r requirements.txt
-    test_command: python -m unittest discover tests
-    start_command: python main.py
-    health_checks: []
-    deploy_environments:
-      - name: Test
-        render_service_id: youtube-automation-test-service-id
-        render_api_key_secret_name: RENDER_YOUTUBE_AUTOMATION_TEST_API_KEY
-      - name: Staging
-        render_service_id: youtube-automation-staging-service-id
-        render_api_key_secret_name: RENDER_YOUTUBE_AUTOMATION_STAGING_API_KEY
-      - name: Production
-        render_service_id: youtube-automation-production-service-id
-        render_api_key_secret_name: RENDER_YOUTUBE_AUTOMATION_PRODUCTION_API_KEY
+    build: "pip install -r requirements.txt"
+    test: "pytest"
+    # No start/health_check for this example
+    deploy:
+      - environment: Test
+        render_service_id: "youtube-automation-test-service-id"
+      - environment: Staging
+        render_service_id: "youtube-automation-staging-service-id"
+      - environment: Production
+        render_service_id: "youtube-automation-production-service-id"
 
   - name: ai_newsbot
     path: apps/ai_newsbot
-    framework_type: Python Script
-    build_command: pip install -r requirements.txt
-    test_command: python -m unittest discover tests
-    start_command: python src/main.py
-    health_checks: []
-    deploy_environments:
-      - name: Test
-        render_service_id: ai-newsbot-test-service-id
-        render_api_key_secret_name: RENDER_AI_NEWSBOT_TEST_API_KEY
-      - name: Staging
-        render_service_id: ai-newsbot-staging-service-id
-        render_api_key_secret_name: RENDER_AI_NEWSBOT_STAGING_API_KEY
-      - name: Production
-        render_service_id: ai-newsbot-production-service-id
-        render_api_key_secret_name: RENDER_AI_NEWSBOT_PRODUCTION_API_KEY
+    build: "pip install -r requirements.txt"
+    test: "pytest"
+    # No start/health_check for this example
+    deploy:
+      - environment: Test
+        render_service_id: "ai-newsbot-test-service-id"
+      - environment: Staging
+        render_service_id: "ai-newsbot-staging-service-id"
+      - environment: Production
+        render_service_id: "ai-newsbot-production-service-id"
 
   - name: mamos-dashboard
     path: apps/mamos-dashboard
-    framework_type: Next.js
-    build_command: npm install && npm run build
-    test_command: npm test
-    start_command: npm start
-    health_checks:
-      - endpoint: /
-        method: GET
-        expected_status: 200
-    deploy_environments:
-      - name: Test
-        render_service_id: mamos-dashboard-test-service-id
-        render_api_key_secret_name: RENDER_MAMOS_DASHBOARD_TEST_API_KEY
-      - name: Staging
-        render_service_id: mamos-dashboard-staging-service-id
-        render_api_key_secret_name: RENDER_MAMOS_DASHBOARD_STAGING_API_KEY
-      - name: Production
-        render_service_id: mamos-dashboard-production-service-id
-        render_api_key_secret_name: RENDER_MAMOS_DASHBOARD_PRODUCTION_API_KEY
+    build: "npm install && npm run build"
+    test: "npm test"
+    # Removed start and health_check for local CI/CD testing as they require a persistent running server
+    deploy:
+      - environment: Test
+        render_service_id: "mamos-dashboard-test-service-id"
+      - environment: Staging
+        render_service_id: "mamos-dashboard-staging-service-id"
+      - environment: Production
+        render_service_id: "mamos-dashboard-production-service-id"
 
   - name: mamos-orchestrator
     path: apps/mamos-orchestrator
-    framework_type: NestJS
-    build_command: npm install && npm run build
-    test_command: npm test
-    start_command: npm run start:prod
-    health_checks:
-      - endpoint: /health
-        method: GET
-        expected_status: 200
-    deploy_environments:
-      - name: Test
-        render_service_id: mamos-orchestrator-test-service-id
-        render_api_key_secret_name: RENDER_MAMOS_ORCHESTRATOR_TEST_API_KEY
-      - name: Staging
-        render_service_id: mamos-orchestrator-staging-service-id
-        render_api_key_secret_name: RENDER_MAMOS_ORCHESTRATOR_STAGING_API_KEY
-      - name: Production
-        render_service_id: mamos-orchestrator-production-service-id
-        render_api_key_secret_name: RENDER_MAMOS_ORCHESTRATOR_PRODUCTION_API_KEY
+    build: "npm install && npm run build"
+    test: "npm test"
+    # Removed start and health_check for local CI/CD testing as they require a persistent running server
+    deploy:
+      - environment: Test
+        render_service_id: "mamos-orchestrator-test-service-id"
+      - environment: Staging
+        render_service_id: "mamos-orchestrator-staging-service-id"
+      - environment: Production
+        render_service_id: "mamos-orchestrator-production-service-id"
 

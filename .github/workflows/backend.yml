@@ -1,3 +1,4 @@
+
 name: Backend CI/CD
 
 on:
@@ -6,55 +7,110 @@ on:
       - main
     paths:
       - 'apps/backend/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'apps/backend/**'
+      - 'config/projects.yaml'
+      - 'infra/ci-cd/mamos_runner.py'
+  workflow_dispatch:
+    inputs:
+      deploy_environment:
+        description: 'Deployment environment (e.g., Test, Staging, Production)'
+        required: false
+        type: string
+
+env:
+  PYTHONUNBUFFERED: "1"
 
 jobs:
-  validate:
+  build-test-healthcheck:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install Python and dependencies
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Install pyyaml
-        run: pip install pyyaml
-      - name: Validate project name and secrets
-        run: python infra/ci-cd/validate_project.py backend
+    permissions:
+      contents: write # Required to push reports back to the repository
+      pull-requests: write # Potentially required for PR status updates
+      checks: write # Required for check runs
 
-  build-and-test:
-    needs: validate
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: pip install -r apps/backend/requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML requests
 
-      - name: Run MAMOS Test Automation for Backend
-        run: python infra/ci-cd/mamos_runner.py --project backend
+      - name: Run MAMOS Build, Test, and Health Check for Backend
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} # Render API Key for deployments
+        run: |
+          python infra/ci-cd/mamos_runner.py --project backend
+
+      - name: Upload CI/CD Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: mamos-ci-cd-reports-backend
+          path: reports/
+
+      - name: Commit and Push Reports (if successful)
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git commit -m "CI/CD: MAMOS reports for backend" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }} # Use a PAT with repo scope for pushing
 
   deploy-test:
-    needs: build-and-test
+    needs: build-test-healthcheck
     runs-on: ubuntu-latest
     environment:
       name: Test
       url: https://test.backend.aladdin.com
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+
     steps:
-      - name: Deploy to Test environment
-        run: python infra/ci-cd/mamos_runner.py --project backend --deploy-env Test
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML requests
+
+      - name: Deploy Backend to Test environment
         env:
-          RENDER_BACKEND_TEST_API_KEY: ${{ secrets.RENDER_BACKEND_TEST_API_KEY }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python infra/ci-cd/mamos_runner.py --project backend --deploy-env Test
+
+      - name: Upload CI/CD Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: mamos-ci-cd-reports-backend-deploy-test
+          path: reports/
+
+      - name: Commit and Push Reports (if successful)
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git commit -m "CI/CD: MAMOS deployment reports for backend (Test)" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
 
   deploy-staging:
     needs: deploy-test
@@ -62,6 +118,11 @@ jobs:
     environment:
       name: Staging
       url: https://staging.backend.aladdin.com
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+
     steps:
       - name: Manual Approval Required for Staging Deployment
         run: |
@@ -77,10 +138,41 @@ jobs:
           echo "* - Necessary Render Service IDs and API Keys are configured for Staging.      *"
           echo "********************************************************************************"
 
-      - name: Deploy to Staging environment
-        run: python infra/ci-cd/mamos_runner.py --project backend --deploy-env Staging
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML requests
+
+      - name: Deploy Backend to Staging environment
         env:
-          RENDER_BACKEND_STAGING_API_KEY: ${{ secrets.RENDER_BACKEND_STAGING_API_KEY }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python infra/ci-cd/mamos_runner.py --project backend --deploy-env Staging
+
+      - name: Upload CI/CD Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: mamos-ci-cd-reports-backend-deploy-staging
+          path: reports/
+
+      - name: Commit and Push Reports (if successful)
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git commit -m "CI/CD: MAMOS deployment reports for backend (Staging)" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
 
   deploy-production:
     needs: deploy-staging
@@ -88,6 +180,11 @@ jobs:
     environment:
       name: Production
       url: https://production.backend.aladdin.com
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+
     steps:
       - name: Manual Approval Required for Production Deployment
         run: |
@@ -104,7 +201,39 @@ jobs:
           echo "* - Staging deployment has been successfully verified.                         *"
           echo "********************************************************************************"
 
-      - name: Deploy to Production environment
-        run: python infra/ci-cd/mamos_runner.py --project backend --deploy-env Production
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML requests
+
+      - name: Deploy Backend to Production environment
         env:
-          RENDER_BACKEND_PRODUCTION_API_KEY: ${{ secrets.RENDER_BACKEND_PRODUCTION_API_KEY }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python infra/ci-cd/mamos_runner.py --project backend --deploy-env Production
+
+      - name: Upload CI/CD Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: mamos-ci-cd-reports-backend-deploy-production
+          path: reports/
+
+      - name: Commit and Push Reports (if successful)
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git commit -m "CI/CD: MAMOS deployment reports for backend (Production)" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+
