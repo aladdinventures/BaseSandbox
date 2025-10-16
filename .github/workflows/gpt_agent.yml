@@ -1,4 +1,3 @@
-
 name: GPT Agent CI/CD
 
 on:
@@ -14,7 +13,6 @@ on:
       - 'apps/gpt_agent/**'
 
 jobs:
-<<<<<<< HEAD
   validate:
     runs-on: ubuntu-latest
     steps:
@@ -30,9 +28,6 @@ jobs:
 
   validate-config:
     needs: validate
-=======
-  validate-config:
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -55,15 +50,9 @@ jobs:
       url: https://test.gpt-agent.aladdin.com
     steps:
       - name: Deploy to Test environment
-<<<<<<< HEAD
         run: python infra/ci-cd/mamos_runner.py --project gpt_agent --deploy-env Test
         env:
           RENDER_GPT_AGENT_TEST_API_KEY: ${{ secrets.RENDER_GPT_AGENT_TEST_API_KEY }}
-=======
-        run: echo "Deploying GPT Agent to Test environment..."
-        # Add actual deployment steps here, e.g., using environment secrets
-        # run: echo "Deploying with secret: ${{ secrets.GPT_AGENT_TEST_DEPLOY_KEY }}"
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
 
   deploy-staging:
     needs: deploy-test
@@ -72,7 +61,6 @@ jobs:
       name: Staging
       url: https://staging.gpt-agent.aladdin.com
     steps:
-<<<<<<< HEAD
       - name: Manual Approval Required for Staging Deployment
         run: |
           echo "********************************************************************************"
@@ -91,12 +79,6 @@ jobs:
         run: python infra/ci-cd/mamos_runner.py --project gpt_agent --deploy-env Staging
         env:
           RENDER_GPT_AGENT_STAGING_API_KEY: ${{ secrets.RENDER_GPT_AGENT_STAGING_API_KEY }}
-=======
-      - name: Deploy to Staging environment
-        run: echo "Deploying GPT Agent to Staging environment..."
-        # Add actual deployment steps here, e.g., using environment secrets
-        # run: echo "Deploying with secret: ${{ secrets.GPT_AGENT_TEST_DEPLOY_KEY }}"
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
 
   deploy-production:
     needs: deploy-staging
@@ -105,7 +87,6 @@ jobs:
       name: Production
       url: https://production.gpt-agent.aladdin.com
     steps:
-<<<<<<< HEAD
       - name: Manual Approval Required for Production Deployment
         run: |
           echo "********************************************************************************"
@@ -125,10 +106,3 @@ jobs:
         run: python infra/ci-cd/mamos_runner.py --project gpt_agent --deploy-env Production
         env:
           RENDER_GPT_AGENT_PRODUCTION_API_KEY: ${{ secrets.RENDER_GPT_AGENT_PRODUCTION_API_KEY }}
-=======
-      - name: Deploy to Production environment
-        run: echo "Deploying GPT Agent to Production environment..."
-        # Add actual deployment steps here, e.g., using environment secrets
-        # run: echo "Deploying with secret: ${{ secrets.GPT_AGENT_TEST_DEPLOY_KEY }}"
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
-

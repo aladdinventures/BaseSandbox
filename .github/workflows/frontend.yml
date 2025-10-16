@@ -1,4 +1,3 @@
-
 name: Frontend CI/CD
 
 on:
@@ -14,7 +13,6 @@ on:
       - 'apps/frontend/**'
 
 jobs:
-<<<<<<< HEAD
   validate:
     runs-on: ubuntu-latest
     steps:
@@ -30,9 +28,6 @@ jobs:
 
   build-and-test:
     needs: validate
-=======
-  build-and-test:
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -52,15 +47,9 @@ jobs:
       url: https://test.frontend.aladdin.com
     steps:
       - name: Deploy to Test environment
-<<<<<<< HEAD
         run: python infra/ci-cd/mamos_runner.py --project frontend --deploy-env Test
         env:
           RENDER_FRONTEND_TEST_API_KEY: ${{ secrets.RENDER_FRONTEND_TEST_API_KEY }}
-=======
-        run: echo "Deploying frontend to Test environment..."
-        # Add actual deployment steps here, e.g., using environment secrets
-        # run: echo "Deploying with secret: ${{ secrets.FRONTEND_TEST_DEPLOY_KEY }}"
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
 
   deploy-staging:
     needs: deploy-test
@@ -69,7 +58,6 @@ jobs:
       name: Staging
       url: https://staging.frontend.aladdin.com
     steps:
-<<<<<<< HEAD
       - name: Manual Approval Required for Staging Deployment
         run: |
           echo "********************************************************************************"
@@ -88,12 +76,6 @@ jobs:
         run: python infra/ci-cd/mamos_runner.py --project frontend --deploy-env Staging
         env:
           RENDER_FRONTEND_STAGING_API_KEY: ${{ secrets.RENDER_FRONTEND_STAGING_API_KEY }}
-=======
-      - name: Deploy to Staging environment
-        run: echo "Deploying frontend to Staging environment..."
-        # Add actual deployment steps here, e.g., using environment secrets
-        # run: echo "Deploying with secret: ${{ secrets.FRONTEND_TEST_DEPLOY_KEY }}"
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
 
   deploy-production:
     needs: deploy-staging
@@ -102,7 +84,6 @@ jobs:
       name: Production
       url: https://production.frontend.aladdin.com
     steps:
-<<<<<<< HEAD
       - name: Manual Approval Required for Production Deployment
         run: |
           echo "********************************************************************************"
@@ -122,10 +103,3 @@ jobs:
         run: python infra/ci-cd/mamos_runner.py --project frontend --deploy-env Production
         env:
           RENDER_FRONTEND_PRODUCTION_API_KEY: ${{ secrets.RENDER_FRONTEND_PRODUCTION_API_KEY }}
-=======
-      - name: Deploy to Production environment
-        run: echo "Deploying frontend to Production environment..."
-        # Add actual deployment steps here, e.g., using environment secrets
-        # run: echo "Deploying with secret: ${{ secrets.FRONTEND_TEST_DEPLOY_KEY }}"
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
-

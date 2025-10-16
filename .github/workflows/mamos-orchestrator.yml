@@ -1,4 +1,3 @@
-
 name: MAMOS Orchestrator CI/CD
 
 on:
@@ -14,7 +13,6 @@ on:
       - 'apps/mamos-orchestrator/**'
 
 jobs:
-<<<<<<< HEAD
   validate:
     runs-on: ubuntu-latest
     steps:
@@ -30,9 +28,6 @@ jobs:
 
   build-and-test:
     needs: validate
-=======
-  build-and-test:
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -62,15 +57,9 @@ jobs:
       url: https://test.mamos-orchestrator.aladdin.com
     steps:
       - name: Deploy to Test environment
-<<<<<<< HEAD
         run: python infra/ci-cd/mamos_runner.py --project mamos-orchestrator --deploy-env Test
         env:
           RENDER_MAMOS_ORCHESTRATOR_TEST_API_KEY: ${{ secrets.RENDER_MAMOS_ORCHESTRATOR_TEST_API_KEY }}
-=======
-        run: echo "Deploying MAMOS Orchestrator to Test environment..."
-        # Add actual deployment steps here, e.g., using environment secrets
-        # run: echo "Deploying with secret: ${{ secrets.MAMOS_ORCHESTRATOR_TEST_DEPLOY_KEY }}"
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
 
   deploy-staging:
     needs: deploy-test
@@ -79,7 +68,6 @@ jobs:
       name: Staging
       url: https://staging.mamos-orchestrator.aladdin.com
     steps:
-<<<<<<< HEAD
       - name: Manual Approval Required for Staging Deployment
         run: |
           echo "********************************************************************************"
@@ -101,21 +89,11 @@ jobs:
 
   deploy-production:
     needs: deploy-staging
-=======
-      - name: Deploy to Staging environment
-        run: echo "Deploying MAMOS Orchestrator to Staging environment..."
-        # Add actual deployment steps here, e.g., using environment secrets
-        # run: echo "Deploying with secret: ${{ secrets.MAMOS_ORCHESTRATOR_TEST_DEPLOY_KEY }}"
-
-  deploy-production:
-    needs: deploy-test
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
     runs-on: ubuntu-latest
     environment:
       name: Production
       url: https://production.mamos-orchestrator.aladdin.com
     steps:
-<<<<<<< HEAD
       - name: Manual Approval Required for Production Deployment
         run: |
           echo "********************************************************************************"
@@ -135,10 +113,3 @@ jobs:
         run: python infra/ci-cd/mamos_runner.py --project mamos-orchestrator --deploy-env Production
         env:
           RENDER_MAMOS_ORCHESTRATOR_PRODUCTION_API_KEY: ${{ secrets.RENDER_MAMOS_ORCHESTRATOR_PRODUCTION_API_KEY }}
-=======
-      - name: Deploy to Production environment
-        run: echo "Deploying MAMOS Orchestrator to Production environment..."
-        # Add actual deployment steps here, e.g., using environment secrets
-        # run: echo "Deploying with secret: ${{ secrets.MAMOS_ORCHESTRATOR_TEST_DEPLOY_KEY }}"
->>>>>>> d0bf634cc7097092c9f8b310978c1908532e8245
-
